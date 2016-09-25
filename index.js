@@ -5,6 +5,7 @@
     var width  = 800;
     var height = 600;
     var speed = 0.02;
+    var scale = 400;
     var startTime = Date.now();
     var currentTime = Date.now();
 
@@ -17,7 +18,9 @@
         .attr("height", height);
 
     var projection = d3.geo.orthographic()
-        .scale(200);
+        .scale(scale)
+        .rotate([-105, -30])
+        .clipAngle(90);
 
     var graticule = d3.geo.graticule();
 
@@ -32,6 +35,8 @@
         .attr("y",height/2)
         .text("Now Loading...");
 
+
+
     d3.json("./world_605kb.json", function(error, root) {
         if (error)
             return console.error(error);
@@ -44,13 +49,12 @@
         var map = svg.append("g")
             .attr("transform", "translate(" +  -75 + "," + 20 + ")");
 
-        map.append("path")
+        var gridPath = map.append('g').attr("id","grid_id").append("path")
             .datum( grid )
-            .attr("id","grid_id")
             .attr("class","grid_path")
             .attr("d",path);
 
-        map.selectAll(".map_path")
+        var mapPath = map.append('g').selectAll(".map_path")
             .data( root.features )
             .enter()
             .append("path")
@@ -68,23 +72,47 @@
                     .attr("fill",color(i));
             });
 
+        var drag = d3.behavior.drag().on('drag', function () {
+            var r = projection.rotate();
+            var x0 = r[0];
+            var y0 = r[1];
+
+            var x = 180*d3.event.dx / width;
+            var y = 180*d3.event.dy / height;
+
+            projection.rotate([x0+x, y0-y,0]);
+
+            gridPath.attr('d', path);
+            mapPath.attr('d', path);
+        });
+        
+        var zoom = d3.behavior.zoom().on('zoom', function () {
+            projection.scale(scale * d3.event.scale);
+
+            gridPath.attr('d', path);
+            mapPath.attr('d', path);
+        });
+
+        map.call(drag);
+        map.call(zoom);
+
         svg.select("#loading")
             .attr("opacity",0);
 
-        d3.timer(function() {
-
-            currentTime = Date.now();
-
-            projection.rotate([speed * (currentTime - startTime), -15]).clipAngle(90);
-
-            map.select("#grid_id")
-                .attr("d",path);
-
-            map.selectAll(".map_path")
-                .attr("d",path);
-
-
-        });
+        // d3.timer(function() {
+        //
+        //     currentTime = Date.now();
+        //
+        //     projection.rotate([speed * (currentTime - startTime), -15]).clipAngle(90);
+        //
+        //     map.select("#grid_id")
+        //         .attr("d",path);
+        //
+        //     map.selectAll(".map_path")
+        //         .attr("d",path);
+        //
+        //
+        // });
 
     });
 })();
