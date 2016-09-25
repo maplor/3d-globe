@@ -42,7 +42,7 @@
         console.log(grid);
 
         var map = svg.append("g")
-            .attr("transform", "translate(" +  -230 + "," + -20 + ")");
+            .attr("transform", "translate(" +  -75 + "," + 20 + ")");
 
         map.append("path")
             .datum( grid )
